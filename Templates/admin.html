@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin</title>
+</head>
+<body>
+    <h1> Admin Side </h1>
+
+    <p> Super duper hemmelig admin side </p>
+
+    <p> Bruker: {{.}} </p>
+
+    <h2> Lag nytt brett </h2>
+
+    <form action="/nytt-brett" method="post">
+        <input class="csrf_token" type="hidden" name="csrf_token">
+        <input type="text" name="Brett">
+        <textarea name="beskrivelse"> Beskrivelse </textarea>
+        <input type="submit" value="Opprett">
+    </form>
+</body>
+
+<script src="/Static/Scripts/csrf.js"></script>
+</html>

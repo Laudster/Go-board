@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/Static/Css/index.css">
+    <title>Document</title>
+</head>
+<body>
+    <h1> <a href="/"> Boards </a> </h1>
+
+    {{if .Navn}}
+        {{.Navn}}
+
+        <form action="/loggut" method="post">
+            <input class="csrf_token" type="hidden" name="csrf_token">
+            <input type="submit" value="Loggut">
+        </form>
+    {{else}}
+        <details>
+            <summary> Registrer </summary>
+
+            <form action="/registrer" method="post">
+                <input type="text" placeholder="Navn" name="navn">
+                <input type="email" placeholder="Email" name="email">
+                <input type="password" placeholder="Passord" name="passord">
+                <input type="submit">
+            </form>
+        </details>
+
+        <details>
+            <summary> Logginn </summary>
+
+            <form action="/logginn" method="post">
+                <input type="text" placeholder="Navn" name="navn">
+                <input type="password" placeholder="Passord" name="passord">
+                <input type="submit">
+            </form>
+        </details>
+    {{end}}
+
+    <br><br>
+
+    <h2> Brett </h2>
+
+    <div class="brettene">
+        {{range .Brett}}
+            <div class="brett">
+                <a href="/brett/{{.}}"> {{.}} </a>
+            </div>
+        {{end}}
+    </div>
+</body>
+
+<script src="/Static/Scripts/csrf.js"></script>
+</html>
