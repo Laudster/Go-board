@@ -156,21 +156,18 @@ func brett(w http.ResponseWriter, r *http.Request) {
 func post(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
-	var count int
+	var brett int
 
-	err := db.QueryRow("select count(*) from posts where id = $1", id).Scan(&count)
+	err := db.QueryRow("select board from posts where id = $1", id).Scan(&brett)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if count <= 0 {
-		http.Error(w, "Klarte ikke laste post", http.StatusInternalServerError)
-		return
-	}
-
 	var brettet string
+
+	db.QueryRow("select name from boards where id = $1", brett).Scan(&brettet)
 
 	row, err := db.Query("select id, title, body, created_by, created_at from posts where id = $1", id)
 
