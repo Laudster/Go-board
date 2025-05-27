@@ -2,20 +2,19 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 )
 
-var templates = template.Must(template.ParseFiles("Templates/index.html", "Templates/brett.html", "Templates/admin.html"))
+var templates = template.Must(template.ParseFiles("Templates/index.html", "Templates/brett.html", "Templates/post.html", "Templates/admin.html"))
 
 var db *sql.DB
 
 type Post struct {
+	Id     int
 	Tittel string
 	Tekst  string
 	Brett  string
@@ -39,7 +38,7 @@ func index(w http.ResponseWriter, r *http.Request) {
 
 	user, _ := getUser(r)
 
-	data := map[string]interface{}{
+	data := map[string]any{
 		"Navn":  user.Name,
 		"Brett": brett,
 	}
@@ -123,31 +122,24 @@ func brett(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := db.Query("select title, body, created_by, created_at, board from posts where board = $1", id)
+	rows, _ := db.Query("select id, title, body, created_by, created_at from posts where board = $1", id)
 
 	defer rows.Close()
 
 	var posts []Post
 
 	for rows.Next() {
-		var tittel, tekst string
-		var skaper, brett int
-		var skapt time.Time
+		post, err := skaffPost(brettet, rows)
 
-		rows.Scan(&tittel, &tekst, &skaper, &skapt, &brett)
-
-		var post = Post{
-			Tittel: tittel,
-			Tekst:  tekst,
-			Brett:  strconv.Itoa(brett),
-			Skapt:  skapt.Format("2006-01-02 15:04:05"),
-			Skaper: strconv.Itoa(skaper),
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 
 		posts = append(posts, post)
 	}
 
-	data := map[string]interface{}{
+	data := map[string]any{
 		"Brettet":     brettet,
 		"Beskrivelse": beskrivelse,
 		"Posts":       posts,
@@ -157,6 +149,49 @@ func brett(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		http.Error(w, "Kunne ikke laste inn "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func post(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+
+	var count int
+
+	err := db.QueryRow("select count(*) from posts where id = $1", id).Scan(&count)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if count <= 0 {
+		http.Error(w, "Klarte ikke laste post", http.StatusInternalServerError)
+		return
+	}
+
+	var brettet string
+
+	row, err := db.Query("select id, title, body, created_by, created_at from posts where id = $1", id)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	row.Next()
+
+	post, err := skaffPost(brettet, row)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = templates.ExecuteTemplate(w, "post.html", post)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
@@ -185,16 +220,17 @@ func nyttBrett(w http.ResponseWriter, r *http.Request) {
 }
 
 func nyPost(w http.ResponseWriter, r *http.Request) {
+	user, err := getUser(r)
+
+	if err != nil {
+		http.Error(w, "Du trenger å være innlogget", http.StatusUnauthorized)
+		return
+	}
+
 	tittel := r.FormValue("tittel")
 	tekst := r.FormValue("tekst")
 
-	user, err := getUser(r)
-
-	id := 0
-
-	if err == nil {
-		id = user.Id
-	}
+	id := user.Id
 
 	sender := strings.Split(r.Referer(), "/")[4]
 
@@ -203,7 +239,6 @@ func nyPost(w http.ResponseWriter, r *http.Request) {
 	err = db.QueryRow("select id from boards where name = $1", sender).Scan(&board)
 
 	if err != nil {
-		fmt.Print(sender)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -231,6 +266,7 @@ func main() {
 	http.HandleFunc("/registrer", registrer)
 	http.HandleFunc("/nytt-brett", nyttBrett)
 	http.HandleFunc("/admin", admin)
+	http.HandleFunc("/post/{id}", post)
 	http.HandleFunc("/post", nyPost)
 	http.HandleFunc("/brett/{brett}", brett)
 	http.HandleFunc("/", index)

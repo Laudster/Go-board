@@ -3,6 +3,8 @@ package main
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -28,4 +30,18 @@ func generateToken(length int) (string, error) {
 	}
 
 	return base64.URLEncoding.EncodeToString(bytes), nil
+}
+
+func formatDate(tid time.Time) string {
+	siden := time.Since(tid)
+
+	if siden.Seconds() < 60 {
+		return fmt.Sprintf("%.0f sekunder", siden.Seconds())
+	} else if siden.Minutes() < 60 {
+		return fmt.Sprintf("%.0f minutter", siden.Minutes())
+	} else if siden.Hours() < 24 {
+		return fmt.Sprintf("%.0f timer", siden.Hours())
+	} else {
+		return fmt.Sprintf("%.0f dager", siden.Hours()/24)
+	}
 }

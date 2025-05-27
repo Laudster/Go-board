@@ -41,7 +41,7 @@ func createDB() (*sql.DB, error) {
 			title text not null,
 			body text not null,
 			created_by integer not null,
-			created_at datetime not null,
+			created_at string not null,
 			board integer not null,
 
 			foreign key (created_by) references users(id) on delete cascade,

@@ -1,0 +1,30 @@
+.nytt
+{
+    margin-bottom: 2rem;
+}
+
+.post
+{
+    border: 1px solid black;
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.postLink
+{
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    width: 30%;
+}
+
+.postLink:hover
+{
+    background-color: #f0f0f0;
+}
+
+.top
+{
+    display: flex;
+    justify-content: space-between;
+}

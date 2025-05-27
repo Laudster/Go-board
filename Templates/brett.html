@@ -3,22 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/Static/Css/brett.css">
     <title>{{.Brettet}}</title>
 </head>
 <body>
+    <h1> <a href="/"> Boards </a> </h1>
+
     <h1> {{.Brettet}} </h1>
     <p> {{.Beskrivelse}} </p>
 
-    <form action="/post" method="post">
+    <form class="nytt" action="/post" method="post">
         <input type="text" placeholder="Tittel" name="tittel"> <br>
         <textarea name="tekst" placeholder="Tekst"></textarea>
         <input type="submit" value="Send">
     </form>
 
     {{range .Posts}}
-        <h4> {{.Tittel}} </h4>
+        <a class="postLink" href="/post/{{.Id}}">
+            <div class="post">
+                <div class="top">
+                    <p> {{.Skaper}} </p>
 
-        <p> {{.Tekst}} </p>
+                    <p> {{.Skapt}} </p>
+                </div>
+
+                <h4> {{.Tittel}} </h4>
+            </div>
+        </a>
     {{end}}
 </body>
 </html>
