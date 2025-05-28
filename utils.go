@@ -38,10 +38,22 @@ func formatDate(tid time.Time) string {
 	if siden.Seconds() < 60 {
 		return fmt.Sprintf("%.0f sekunder", siden.Seconds())
 	} else if siden.Minutes() < 60 {
+		if siden.Minutes() < 2 {
+			return "Ett minutt"
+		}
+
 		return fmt.Sprintf("%.0f minutter", siden.Minutes())
 	} else if siden.Hours() < 24 {
+		if siden.Hours() < 2 {
+			return "1 time"
+		}
+
 		return fmt.Sprintf("%.0f timer", siden.Hours())
 	} else {
+		if siden.Hours() < 48.0 {
+			return "En dag"
+		}
+
 		return fmt.Sprintf("%.0f dager", siden.Hours()/24)
 	}
 }

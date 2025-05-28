@@ -12,15 +12,21 @@
     <h1> {{.Brettet}} </h1>
     <p> {{.Beskrivelse}} </p>
 
-    <form class="nytt" action="/post" method="post">
+    <form class="nytt" action="/post" method="post" enctype="multipart/form-data">
         <input type="text" placeholder="Tittel" name="tittel"> <br>
         <textarea name="tekst" placeholder="Tekst"></textarea>
+        <label class="bilde" for="image"> Bilde </label> <br>
+        <img hidden id="fil">
+        <button hidden onclick="fjern(event)" type="button" class="fjern"> Fjern </button>
+        <input hidden id="image" type="file" name="bilde"> <br>
         <input type="submit" value="Send">
     </form>
 
     {{range .Posts}}
         <a class="postLink" href="/post/{{.Id}}">
             <div class="post">
+                <p> {{.Upvotes}} stemmer </p>
+
                 <div class="top">
                     <p> {{.Skaper}} </p>
 
@@ -28,8 +34,15 @@
                 </div>
 
                 <h4> {{.Tittel}} </h4>
+
+                {{if .Bilde}}
+                    <img src="data:image/png;base64, {{.Bilde}}" alt="">
+                {{end}}
             </div>
         </a>
     {{end}}
 </body>
+
+
+<script src="/Static/Scripts/image.js"></script>
 </html>

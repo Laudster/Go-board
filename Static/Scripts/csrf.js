@@ -8,7 +8,7 @@ function getCookie(name) {
 
 document.addEventListener("DOMContentLoaded", function () {
     const csrfToken = getCookie("csrf_token");
-
+    
     if (csrfToken) {
         let csrfElements = document.getElementsByClassName("csrf_token")
 

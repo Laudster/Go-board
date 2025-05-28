@@ -13,7 +13,7 @@ func createDB() (*sql.DB, error) {
 		return db, err
 	}
 
-	_, err = db.Exec("PRAGMA journal_mode=WAL;")
+	db.Exec("PRAGMA journal_mode=WAL;")
 
 	sqlStatement := `
 		create table if not exists users (
@@ -40,12 +40,36 @@ func createDB() (*sql.DB, error) {
 			id integer not null primary key autoincrement,
 			title text not null,
 			body text not null,
+			image blob,
 			created_by integer not null,
-			created_at string not null,
+			created_at datetime not null,
 			board integer not null,
 
 			foreign key (created_by) references users(id) on delete cascade,
 			foreign key (board) references boards(id) on delete cascade
+		);
+
+		create table if not exists comments (
+			id integer not null primary key autoincrement,
+			body text not null,
+			image blob,
+			created_by integer not null,
+			created_at datetime not null,
+			post integer not null,
+
+			foreign key (created_by) references users(id) on delete cascade,
+			foreign key (post) references posts(id) on delete cascade
+		);
+
+		create table if not exists upvotes (
+			id integer not null primary key autoincrement,
+			created_by integer not null,
+			post integer not null,
+			charge bool not null,
+			comment bool not null,
+
+			foreign key (created_by) references users(id) on delete cascade,
+			foreign key (post) references posts(id) on delete cascade
 		);
 	`
 

@@ -1,0 +1,59 @@
+label
+{
+    font-size: 1.5rem;
+    transition: 0.5s;
+}
+
+input:hover + label
+{
+    cursor: pointer;
+    color: rgb(222, 78, 38);
+}
+
+input[type="checkbox"]:checked + label
+{
+    color: rgb(222, 78, 38);
+}
+
+.bilde
+{
+    color: #3f5158;
+    border: 1px solid black;
+    padding: 0.5rem;
+    margin-left: 1rem;
+    cursor: pointer;
+    transition: 1s;
+}
+
+.bilde:hover
+{
+    background-color: #c7dde6;
+}
+
+hr
+{   
+    margin: 0;
+    width: 20%;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+.kommentar
+{
+    border: 1px solid black;
+    margin-top: 2rem;
+    width: 20%;
+    padding: 0.5rem;
+}
+
+.top
+{
+    display: flex;
+    justify-content: space-between;
+}
+
+img
+{
+    max-width: 400px;
+    max-height: 200px;
+}

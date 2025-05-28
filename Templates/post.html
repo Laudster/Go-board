@@ -3,17 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <link rel="stylesheet" href="/Static/Css/post.css">
+    <title> {{.Post.Tittel}} </title>
 </head>
 <body>
-    <h1> <a href="/brett/{{.Brett}}"> {{.Brett}} </a> </h1>
 
-    <p> {{.Skapt}} </p>
+    <form style="display: inline;" action="/upvote" method="post">
+        <input type="hidden" value="post" name="type">
+        <input type="hidden" value="{{.Post.Id}}" name="post">
+        <input id="charge" type="hidden" value="charge" name="charge">
 
-    <p> {{.Skaper}} </p>
+        {{if eq .Post.Stemt "usikker"}}
+        
+        {{else}}
+            <input id="status" type="hidden" value="{{.Post.Stemt}}">
+        {{end}}
 
-    <h1> {{.Tittel}} </h1>
+        <input hidden id="postUp" class="up" type="checkbox">
+        <label for="postUp"> ↑ </label> 
+        <input hidden id="postDown" class="down" type="checkbox">
+        <label for="postDown"> ↓ </label>
+    </form>
 
-    <p> {{.Tekst}} </p>
+    <p style="display: inline;"> {{.Post.Upvotes}} </p>
+
+    <h1> <a href="/brett/{{.Post.Brett}}"> {{.Post.Brett}} </a> </h1>
+
+    <p> {{.Post.Skapt}} </p>
+
+    <p> {{.Post.Skaper}} </p>
+
+    <h1> {{.Post.Tittel}} </h1>
+
+    <p> {{.Post.Tekst}} </p>
+
+    {{if .Post.Bilde}}
+        <img src="data:image/png;base64, {{.Post.Bilde}}" alt="">
+    {{end}}
+
+    <hr>
+
+    <form action="/kommenter" method="post" enctype="multipart/form-data">
+        <textarea name="tekst" placeholder="Tekst"></textarea>
+        <label class="bilde" for="image"> Bilde </label> <br>
+        <img hidden id="fil">
+        <button hidden onclick="fjern(event)" type="button" class="fjern"> Fjern </button>
+        <input hidden id="image" type="file" name="bilde">  <br>
+        <input type="submit" value="Send">
+    </form>
+
+    {{range .Kommentarer}}
+        <div class="kommentar">
+
+            <form style="display: inline;" action="/upvote" method="post">
+                <input type="hidden" value="kommentar" name="type">
+                <input type="hidden" value="{{.Id}}" name="post">
+                <input id="charge" type="hidden" value="charge" name="charge">  
+
+                {{if eq .Stemt "usikker"}}
+        
+                {{else}}
+                    <input id="status" type="hidden" value="{{.Stemt}}">
+                {{end}}
+
+                <input hidden class="up" id="postUp{{.Id}}" type="checkbox">
+                <label for="postUp{{.Id}}"> ↑ </label> 
+                <input id="postDown{{.Id}}" hidden class="down" type="checkbox">
+                <label for="postDown{{.Id}}"> ↓ </label>
+            </form>
+
+            <p style="display: inline;"> {{.Upvotes}} </p>
+
+            <div class="top">
+                <p> {{.Skapt}} </p>   
+                <h4> {{.Skaper}} </h4>
+            </div>
+
+            <h4> {{.Tekst}} </h4>
+
+            {{if .Bilde}}
+                <img src="data:image/png;base64, {{.Bilde}}" alt="">
+            {{end}}
+        </div>
+    {{end}}
 </body>
+
+<script src="/Static/Scripts/vote.js"></script>
+<script src="/Static/Scripts/image.js"></script>
 </html>
