@@ -71,6 +71,15 @@ func createDB() (*sql.DB, error) {
 			foreign key (created_by) references users(id) on delete cascade,
 			foreign key (post) references posts(id) on delete cascade
 		);
+
+		create table if not exists emailTokens (
+			id integer not null primary key autoincrement,
+			link string not null,
+			created_by id not null,
+			email text,
+
+			foreign key (id) references users(id) on delete cascade
+		);
 	`
 
 	_, err = db.Exec(sqlStatement)

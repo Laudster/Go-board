@@ -11,11 +11,15 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/resend/resend-go/v2"
 )
 
 var templates = template.Must(template.ParseFiles("Templates/index.html", "Templates/brett.html", "Templates/post.html", "Templates/admin.html"))
 
 var db *sql.DB
+
+var client *resend.Client
 
 func index(w http.ResponseWriter, r *http.Request) {
 	rows, err := db.Query("select name from boards")
@@ -430,11 +434,46 @@ func vote(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, r.Referer(), http.StatusFound)
 }
 
+func glemt(w http.ResponseWriter, r *http.Request) {
+	email := r.FormValue("email")
+
+	var id int
+
+	err := db.QueryRow("select id from users where email = $1", email).Scan(&id)
+
+	if err != nil {
+		http.Error(w, "Bruker finnes ikke", http.StatusUnauthorized)
+		return
+	}
+
+	lenke, _ := generateToken(32)
+
+	_, err = db.Exec("insert into emailTokens (link, created_by, email) values($1, $2, $3) ", lenke, id, email)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	params := &resend.SendEmailRequest{
+		From:    "Forum <onboarding@resend.dev>",
+		To:      []string{email},
+		Html:    "<p> Her kan du opprette nytt passord http://localhos:50/" + lenke + "</p>",
+		Subject: "Glemt passord",
+	}
+
+	client.Emails.Send(params)
+
+	http.Redirect(w, r, r.Referer(), http.StatusFound)
+}
+
 func main() {
 	fs := http.FileServer(http.Dir("Static"))
 	http.Handle("/Static/", http.StripPrefix("/Static/", fs))
 
 	db, _ = createDB()
+
+	client = lagKlient()
 
 	defer db.Close()
 
@@ -447,6 +486,7 @@ func main() {
 	http.HandleFunc("/upvote", vote)
 	http.HandleFunc("/post/{id}", post)
 	http.HandleFunc("/post", nyPost)
+	http.HandleFunc("/glemt", glemt)
 	http.HandleFunc("/brett/{brett}", brett)
 	http.HandleFunc("/", index)
 
