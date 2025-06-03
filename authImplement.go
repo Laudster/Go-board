@@ -7,7 +7,7 @@ import (
 
 func registrering(r *http.Request, w http.ResponseWriter) error {
 	if r.Method != http.MethodPost {
-		return errors.New("Feil metode")
+		return errors.New("feil metode")
 	}
 
 	brukernavn := r.FormValue("navn")
@@ -32,19 +32,19 @@ func loggeinn(brukernavn string, passord string, w http.ResponseWriter) error {
 
 func loggeUt(r *http.Request, w http.ResponseWriter) error {
 	if r.Method != http.MethodPost {
-		return errors.New("Feil metode")
+		return errors.New("feil metode")
 	}
 
 	user, err := getUser(r)
 
 	if err != nil {
-		return errors.New("Uautorisert bruker")
+		return errors.New("uautorisert bruker")
 	}
 
 	err = csrfCheck(r, user.Csrf)
 
 	if err != nil {
-		return errors.New("Uautorisert csrf")
+		return errors.New("uautorisert csrf")
 	}
 
 	return loggingOut(w, user.Id)

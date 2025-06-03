@@ -17,7 +17,7 @@
             <input type="submit" value="Loggut">
         </form>
     {{else}}
-        <details>
+        <details {{if index .Error 0}} open {{end}}>
             <summary> Registrer </summary>
 
             <form action="/registrer" method="post">
@@ -26,9 +26,11 @@
                 <input type="password" placeholder="Passord" name="passord">
                 <input type="submit">
             </form>
+
+            <p> {{index .Error 0}} </p>
         </details>
 
-        <details>
+        <details {{if index .Error 1}} open {{end}}>
             <summary> Logginn </summary>
 
             <form action="/logginn" method="post">
@@ -36,15 +38,19 @@
                 <input type="password" placeholder="Passord" name="passord">
                 <input type="submit">
             </form>
+
+            <p> {{index .Error 1}} </p>
         </details>
 
-        <details>
+        <details {{if index .Error 2}} open {{end}}>
             <summary> Glemt passord </summary>
 
             <form action="/glemt" method="post">
                 <input type="text" placeholder="email" name="email">
                 <input type="submit">
             </form>
+
+            <p> {{index .Error 2}} </p>
         </details>
     {{end}}
 

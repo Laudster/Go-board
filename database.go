@@ -73,10 +73,9 @@ func createDB() (*sql.DB, error) {
 		);
 
 		create table if not exists emailTokens (
-			id integer not null primary key autoincrement,
-			link string not null,
+			id string not null,
 			created_by id not null,
-			email text,
+			expire datetime not null,
 
 			foreign key (id) references users(id) on delete cascade
 		);

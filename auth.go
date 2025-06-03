@@ -25,7 +25,7 @@ func registerate(username string, password string, email string) error {
 	}
 
 	if count > 0 {
-		return errors.New("Dette brukernavnet er allerde i bruk")
+		return errors.New("dette brukernavnet er allerde i bruk")
 	}
 
 	if len(email) > 4 {
@@ -57,7 +57,7 @@ func loggingIn(sessionToken string, csrfToken string, username string, password 
 	err := db.QueryRow(usercheck, username).Scan(&hash)
 
 	if err != nil || !checkPassword(password, hash) {
-		return errors.New("Innloggings informasjon feil")
+		return errors.New("innloggings informasjon feil")
 	}
 
 	http.SetCookie(w, &http.Cookie{

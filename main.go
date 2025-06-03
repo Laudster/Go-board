@@ -15,14 +15,14 @@ import (
 	"github.com/resend/resend-go/v2"
 )
 
-var templates = template.Must(template.ParseFiles("Templates/index.html", "Templates/brett.html", "Templates/post.html", "Templates/admin.html"))
+var templates = template.Must(template.ParseFiles("Templates/index.html", "Templates/brett.html", "Templates/post.html", "Templates/admin.html", "Templates/glemt.html"))
 
 var db *sql.DB
 
 var client *resend.Client
 
 func index(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query("select name from boards")
+	rows, _ := db.Query("select name from boards")
 
 	defer rows.Close()
 
@@ -37,12 +37,19 @@ func index(w http.ResponseWriter, r *http.Request) {
 
 	user, _ := getUser(r)
 
+	errorer := make([]string, 3)
+
+	errorer[0] = r.URL.Query().Get("registrer")
+	errorer[1] = r.URL.Query().Get("logginn")
+	errorer[2] = r.URL.Query().Get("glemt")
+
 	data := map[string]any{
 		"Navn":  user.Name,
 		"Brett": brett,
+		"Error": errorer,
 	}
 
-	err = templates.ExecuteTemplate(w, "index.html", data)
+	err := templates.ExecuteTemplate(w, "index.html", data)
 
 	if err != nil {
 		http.Error(w, "Kunne ikke laste template", http.StatusInternalServerError)
@@ -58,12 +65,12 @@ func admin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if user.Admin != true {
+	if user.Admin {
 		http.Error(w, "Du er ikke admin", http.StatusUnauthorized)
 		return
 	}
 
-	err = templates.ExecuteTemplate(w, "admin.html", user.Name)
+	templates.ExecuteTemplate(w, "admin.html", user.Name)
 }
 
 func registrer(w http.ResponseWriter, r *http.Request) {
@@ -435,36 +442,90 @@ func vote(w http.ResponseWriter, r *http.Request) {
 }
 
 func glemt(w http.ResponseWriter, r *http.Request) {
-	email := r.FormValue("email")
+	if r.Method == http.MethodPost {
+		email := r.FormValue("email")
+		var id int
 
-	var id int
+		err := db.QueryRow("select id from users where email = $1", email).Scan(&id)
 
-	err := db.QueryRow("select id from users where email = $1", email).Scan(&id)
+		if err != nil {
+			http.Redirect(w, r, formatError("glemt", "Bruker finnes ikke"), http.StatusFound)
+			return
+		}
 
-	if err != nil {
-		http.Error(w, "Bruker finnes ikke", http.StatusUnauthorized)
+		lenke, _ := generateToken(32)
+
+		_, err = db.Exec("insert into emailTokens (id, created_by, expire) values($1, $2, $3) ", lenke, id, time.Now().Add(time.Hour))
+
+		if err != nil {
+			http.Redirect(w, r, formatError("glemt", err.Error()), http.StatusFound)
+			return
+		}
+
+		params := &resend.SendEmailRequest{
+			From:    "Forum <onboarding@resend.dev>",
+			To:      []string{email},
+			Html:    "<p> Her kan du opprette nytt passord http://localhost:50/glemt/" + lenke + "</p>",
+			Subject: "Glemt passord",
+		}
+
+		client.Emails.Send(params)
+
+		http.Redirect(w, r, formatError("glemt", "Du har nå blitt sendt en lenke for å lage et nytt passord"), http.StatusFound)
+	} else if r.Method == http.MethodGet {
+		id := r.PathValue("id")
+
+		var userId int
+
+		err := db.QueryRow("select created_by from emailTokens where id = $1", id).Scan(&userId)
+
+		if err != nil {
+			http.Error(w, "Enten juks, eller: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		err = templates.ExecuteTemplate(w, "glemt.html", nil)
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}
+}
+
+func nyttPassord(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Feil metode", http.StatusMethodNotAllowed)
 		return
 	}
 
-	lenke, _ := generateToken(32)
+	id := strings.Split(r.Referer(), "/")[4]
 
-	_, err = db.Exec("insert into emailTokens (link, created_by, email) values($1, $2, $3) ", lenke, id, email)
+	var userId int
+
+	err := db.QueryRow("select created_by from emailTokens where id = $1", id).Scan(&userId)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	params := &resend.SendEmailRequest{
-		From:    "Forum <onboarding@resend.dev>",
-		To:      []string{email},
-		Html:    "<p> Her kan du opprette nytt passord http://localhos:50/" + lenke + "</p>",
-		Subject: "Glemt passord",
+	hash, _ := hashPassword(r.FormValue("passord"))
+
+	_, err = db.Exec("update users set hash = $1 where id = $2", hash, userId)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	client.Emails.Send(params)
+	_, err = db.Exec("delete from emailTokens where id = $1", id)
 
-	http.Redirect(w, r, r.Referer(), http.StatusFound)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, formatError("logginn", "Nytt passord registrert"), http.StatusFound)
 }
 
 func main() {
@@ -478,6 +539,7 @@ func main() {
 	defer db.Close()
 
 	http.HandleFunc("/loggut", loggut)
+	http.HandleFunc("/nyttPassord", nyttPassord)
 	http.HandleFunc("/logginn", loggInn)
 	http.HandleFunc("/registrer", registrer)
 	http.HandleFunc("/nytt-brett", nyttBrett)
@@ -486,6 +548,7 @@ func main() {
 	http.HandleFunc("/upvote", vote)
 	http.HandleFunc("/post/{id}", post)
 	http.HandleFunc("/post", nyPost)
+	http.HandleFunc("/glemt/{id}", glemt)
 	http.HandleFunc("/glemt", glemt)
 	http.HandleFunc("/brett/{brett}", brett)
 	http.HandleFunc("/", index)

@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
+	"net/url"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -56,4 +57,8 @@ func formatDate(tid time.Time) string {
 
 		return fmt.Sprintf("%.0f dager", siden.Hours()/24)
 	}
+}
+
+func formatError(navn string, err string) string {
+	return fmt.Sprintf("/?"+navn+"=%s", url.QueryEscape(err))
 }
