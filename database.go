@@ -2,6 +2,8 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -86,6 +88,33 @@ func createDB() (*sql.DB, error) {
 	if err != nil {
 		return db, err
 	}
+
+	ticker := time.NewTicker(10 * time.Minute)
+
+	defer ticker.Stop()
+
+	stop := make(chan struct{})
+
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				fmt.Print("running")
+				_, err := db.Exec("DELETE FROM emailTokens WHERE rowid IN ( SELECT rowid FROM emailTokens WHERE expire <= ? LIMIT 100);", time.Now())
+
+				if err != nil {
+					fmt.Println(err.Error())
+				}
+
+			case <-stop:
+				return
+			}
+		}
+	}()
+
+	time.Sleep(6 * time.Second)
+	close(stop)
+	time.Sleep(500 * time.Millisecond)
 
 	return db, nil
 }
